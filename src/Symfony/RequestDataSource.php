@@ -1,4 +1,4 @@
-<?php namespace InThere\ClockworkHelpers\HttpFoundation;
+<?php namespace InThere\ClockworkHelpers\Symfony;
 
 
 use Clockwork\DataSource\DataSourceInterface;
