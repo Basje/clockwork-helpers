@@ -6,6 +6,7 @@ namespace InThere\ClockworkHelpers\Illuminate;
 use Clockwork\DataSource\DataSourceInterface;
 use Clockwork\Request\Request;
 use Illuminate\Database\Connection;
+use InThere\ClockworkHelpers\Contracts\TimeLineDataSourceInterface;
 
 class ConnectionDataSource implements DataSourceInterface
 {
@@ -16,9 +17,19 @@ class ConnectionDataSource implements DataSourceInterface
     private $connection;
 
     /**
+     * @var TimeLineDataSourceInterface
+     */
+    private $timeLineDataSource;
+
+    /**
      * @var boolean
      */
     private $parseLog = false;
+
+    /**
+     * @var booleam
+     */
+    private $showTimeLine = true;
 
     /**
      * Constructor.
@@ -26,17 +37,47 @@ class ConnectionDataSource implements DataSourceInterface
      * @param Connection $connection
      * @param boolean $parse Replace placeholders with their bindings when set to `true`.
      */
-    public function __construct(Connection $connection, $parse = false)
+    public function __construct(Connection $connection, TimeLineDataSourceInterface $dataSource)
     {
         $connection->enableQueryLog();
+        var_dump($connection->getEventDispatcher());
+        $connection->listen($this->getQueryTimeLineListener());
+        var_dump($this->getQueryTimeLineListener());
         $this->connection = $connection;
-        $this->parseLog = $parse === true;
+        $this->timeLineDataSource = $dataSource;
     }
 
     /**
      * @param Request $request
      */
     public function resolve(Request $request)
+    {
+        $this->resolveQueryLog($request);
+        $this->resolveTimeLine($request);
+        var_dump($request);die;
+    }
+
+    public function enableQueryParsing()
+    {
+        $this->parseLog = true;
+    }
+
+    public function disableQueryParsing()
+    {
+        $this->parseLog = false;
+    }
+
+    public function enableQueryTimeLine()
+    {
+        $this->showTimeLine = true;
+    }
+
+    public function disableQueryTimeLine()
+    {
+        $this->showTimeLine = false;
+    }
+
+    private function resolveQueryLog(Request $request)
     {
         $log = $this->getQueryLog();
         if($this->parseLog)
@@ -50,6 +91,14 @@ class ConnectionDataSource implements DataSourceInterface
             }, $log);
         }
         $request->databaseQueries = $this->convertLogToRequestFormat($log);
+    }
+
+    private function resolveTimeLine(Request $request)
+    {
+        if($this->showTimeLine)
+        {
+            $this->timeLineDataSource->resolve($request);
+        }
     }
 
     /**
@@ -136,6 +185,23 @@ class ConnectionDataSource implements DataSourceInterface
     private function escapeStringValue($value)
     {
         return str_replace("'", "''", $value);
+    }
+
+    private function getQueryTimeLineListener()
+    {
+        return function($sql, $bindings, $time){
+            var_dump($sql, $bindings, $time);
+            $now = microtime(true);
+            /** @var string $sql */
+            /** @var array $bindings */
+            /** @var float $time */
+            $this->timeLineDataSource->addEvent(
+              sprintf('query_%f', $now),
+              $sql,
+              $now - $time,
+              $now
+            );
+        };
     }
 
 }
