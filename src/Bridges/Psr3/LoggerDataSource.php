@@ -1,4 +1,4 @@
-<?php namespace InThere\ClockworkHelpers\Psr3;
+<?php namespace InThere\ClockworkHelpers\Bridges\Psr3;
 
 
 use Clockwork\DataSource\DataSourceInterface;
