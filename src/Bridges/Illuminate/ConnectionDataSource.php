@@ -1,6 +1,6 @@
 <?php
 
-namespace InThere\ClockworkHelpers\Illuminate;
+namespace InThere\ClockworkHelpers\Bridges\Illuminate;
 
 
 use Clockwork\DataSource\DataSourceInterface;
